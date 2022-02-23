@@ -1,0 +1,50 @@
+:root {
+  --box-size: 2rem;
+  --cols: 10;
+  --rows: 16;
+}
+
+#grid,
+.box,
+.modal {
+  display: grid;
+  place-items: center;
+}
+
+#grid {
+  grid:
+    repeat(var(--rows), var(--box-size)) /
+    repeat(var(--cols), var(--box-size));
+  gap: 0.4rem;
+}
+
+.box {
+  border: 0.12rem solid black;
+  border-radius: 0.375rem;
+  width: 100%;
+  height: 100%;
+}
+
+.active {
+  background-color: black;
+}
+.static {
+  background-color: black;
+}
+
+.food {
+  border-color: brown;
+  background-color: brown;
+}
+
+.modal {
+  position: absolute;
+  background-color: white;
+  padding: 2.5rem;
+  border-radius: 0.375rem;
+  filter: drop-shadow(0 20px 13px rgb(0 0 0 / 0.08))
+    drop-shadow(0 8px 5px rgb(0 0 0 / 0.13));
+}
+.modal > button {
+  margin-top: 1rem;
+}
