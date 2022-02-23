@@ -147,8 +147,6 @@ function game() {
 }
 // controls(boxAction)
 // game()
-controls(player)
-game()
 
 // UI & game start
 // document.querySelectorAll(".modal-btn").forEach(btn => {
