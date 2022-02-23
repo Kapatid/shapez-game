@@ -1,7 +1,7 @@
 :root {
-  --box-size: 2rem;
+  --box-size: 1.5rem;
   --cols: 10;
-  --rows: 16;
+  --rows: 24;
 }
 
 #grid,

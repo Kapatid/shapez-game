@@ -12,25 +12,28 @@ export const getGridData = () => {
 }
 
 /**
- * @param {{ movement: string}} movement
+ * @param {{ move: string, rotate: boolean}} boxAction
  */
-export const controls = player => {
+export const controls = boxAction => {
   window.addEventListener("keydown", event => {
     switch (event.code) {
+      case "KeyT":
+        boxAction.rotate = true
+        break
       case "KeyS":
       case "ArrowDown":
-        player.movement = "down"
+        boxAction.move = "down"
         break
       case "KeyA":
       case "ArrowLeft":
-        player.movement = "left"
+        boxAction.move = "left"
         break
       case "KeyD":
       case "ArrowRight":
-        player.movement = "right"
+        boxAction.move = "right"
         break
       default:
-        player.movement = "idle"
+        boxAction.move = "idle"
     }
   })
 }
