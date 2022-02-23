@@ -121,8 +121,8 @@ function game() {
     renderBlock(grid, currBlock)
   }, settings.speed)
 }
-// controls(player)
-// game()
+controls(player)
+game()
 
 // UI & game start
 // document.querySelectorAll(".modal-btn").forEach(btn => {
