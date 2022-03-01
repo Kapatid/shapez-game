@@ -1,7 +1,7 @@
 import { controls, getGridData } from "./others.js"
 import blocks from "./blocks.js"
 
-let settings = { speed: 250, border: true }
+let settings = { speed: 550, border: true }
 
 // Get grid and populate it with boxes
 const grid = document.querySelector("#grid")
@@ -14,38 +14,61 @@ for (let i = 0; i < 240; i++) {
 
 const { cols, rows } = getGridData()
 let gameEnd = false
-let boxAction = { move: "idle", rotate: false }
+let blockAction = {
+  move: "idle",
+  rotate: false,
+  reset: function () {
+    this.move = "idle"
+    this.rotate = false
+  },
+}
 
 /** From xy coords to array index. (row * width) + column */
 const toArrIndex = ({ x, y }) => y * cols + x
+// NOT FINAL
+const countOccurrences = (arr, x) =>
+  arr.reduce((total, box) => (box.x === x ? total + 1 : total), 0)
 
-/** @returns {{ x: number, y: number}[]} */
+/** @returns {{bCoords: { x: number, y: number }[], bName: string}}} */
 const randomBlock = blocks => {
-  const values = Object.values(blocks)
-  return values[Math.floor(Math.random() * values.length)]
+  const coords = Object.values(blocks)
+  const randomNum = Math.floor(Math.random() * coords.length)
+  const name = Object.keys(blocks)[randomNum]
+  return {
+    bCoords: coords[randomNum].map(coord => ({
+      x:
+        // Move block to center
+        name === "O"
+          ? coord.x + Math.floor(cols / 2 - 1)
+          : coord.x + Math.floor(cols / 2 - 2),
+      y: coord.y,
+    })),
+    bName: name,
+  }
 }
+
 /**
  * @param {HTMLElement} gridDiv
- * @param {{x: number, y: number}[]} block
+ * @param {{x: number, y: number}[]} bCoords
  */
-const renderBlock = (gridDiv, block) =>
-  block.forEach(coord => {
+const renderBlock = (gridDiv, bCoords) =>
+  bCoords.forEach(coord => {
     gridDiv.children[toArrIndex(coord)].classList.add("active")
   })
+
 /**
- * @param {{ x: number, y: number}[]} block
- * @returns {{ x: number, y: number}[]}
+ * Remove previously rendered block
+ * @param {{ x: number; y: number;}[]} blockCoordinates
  */
-const centerBlock = block =>
-  block.map(coord => ({
-    x: coord.x + Math.floor(cols / 2 - 2),
-    y: coord.y,
-  }))
+const removePrevBlock = blockCoordinates =>
+  blockCoordinates.map(coord =>
+    gridBoxes[toArrIndex(coord)].classList.remove("active")
+  )
+
 /**
  * @param {{ x: number, y: number}} coord
- * @returns {boolean}
  */
-const nextBoxStatic = coord =>
+const isBoxStatic = coord =>
   gridBoxes[toArrIndex(coord)].classList.contains("static")
 
 /**
@@ -53,7 +76,7 @@ const nextBoxStatic = coord =>
  * @param {number} degree
  * @param {{ x: number, y: number }} coord
  * @param {{ x: number, y: number }} origin - Center of rotation
- * @returns
+ * @returns {{ x: number, y: number }}
  */
 const rotateBox = (degree, { x, y }, origin) => {
   const radians = (degree * Math.PI) / 180
@@ -69,70 +92,89 @@ const rotateBox = (degree, { x, y }, origin) => {
 
 function game() {
   // START
-  let currBlock = centerBlock(randomBlock(blocks))
-  renderBlock(grid, currBlock)
+  let newBlock = randomBlock(blocks)
+  let { bCoords, bName } = newBlock
 
-  // UPDATE
+  renderBlock(grid, bCoords)
+
+  // UPDATE fall
   setInterval(() => {
     if (gameEnd) return
 
     if (
       // If last row is reached
-      currBlock.some(coord => coord.y >= rows - 1) ||
+      bCoords.some(coord => coord.y >= rows - 1) ||
       // If falling block hit another block repalce class
-      currBlock.some(coord => nextBoxStatic({ x: coord.x, y: coord.y + 1 }))
+      bCoords.some(coord => isBoxStatic({ x: coord.x, y: coord.y + 1 }))
     ) {
-      currBlock.forEach(coord => {
+      bCoords.forEach(coord => {
         gridBoxes[toArrIndex(coord)].classList.remove("active")
         gridBoxes[toArrIndex(coord)].classList.add("static")
       })
-      // Create new block
-      currBlock = centerBlock(randomBlock(blocks))
+      // Create new falling block
+      newBlock = randomBlock(blocks)
+      bCoords = newBlock.bCoords
+      bName = newBlock.bName
     } else {
-      // Else keep falling
-      currBlock.map(coord =>
-        gridBoxes[toArrIndex(coord)].classList.remove("active")
+      removePrevBlock(bCoords)
+      // Make block "fall"
+      bCoords = bCoords.map(coord => ({ x: coord.x, y: coord.y + 1 }))
+    }
+
+    if (!gameEnd) renderBlock(grid, bCoords)
+  }, settings.speed)
+  // UPDATE controls
+  setInterval(() => {
+    if (blockAction.move === "left") {
+      removePrevBlock(bCoords)
+      bCoords = bCoords.map(coord => ({
+        x:
+          // Stop moving if a box have x=0
+          bCoords.some(coord => coord.x === 0) ||
+          // Stop moving if there is a static box
+          bCoords.some(coord => isBoxStatic({ x: coord.x - 1, y: coord.y + 1 }))
+            ? coord.x
+            : coord.x - 1,
+        y: coord.y,
+      }))
+      renderBlock(grid, bCoords)
+    }
+    if (blockAction.move === "right") {
+      removePrevBlock(bCoords)
+      bCoords = bCoords.map(coord => ({
+        x:
+          bCoords.some(coord => coord.x === cols - 1) ||
+          bCoords.some(coord => isBoxStatic({ x: coord.x + 1, y: coord.y + 1 }))
+            ? coord.x
+            : coord.x + 1,
+        y: coord.y,
+      }))
+      renderBlock(grid, bCoords)
+    }
+
+    // Rotation
+    if (
+      blockAction.rotate &&
+      bName !== "O" &&
+      countOccurrences(bCoords, 0) < 2 &&
+      countOccurrences(bCoords, cols - 1) < 2
+    ) {
+      const rotatedBlock = bCoords.map(coord =>
+        rotateBox(90, coord, { x: bCoords[2].x, y: bCoords[2].y })
       )
 
-      if (boxAction.move === "left") {
-        currBlock = currBlock.map(coord => ({
-          x:
-            // Stop moving x axis if computed x goes outside the current row
-            currBlock[0].x - 1 < 0 ||
-            // Stop moving x axis if there is a static box
-            // FIX: Not viable if block is rotated
-            currBlock.some(coord =>
-              nextBoxStatic({ x: coord.x - 1, y: coord.y + 1 })
-            )
-              ? coord.x
-              : coord.x - 1,
-          y: coord.y,
-        }))
-      } else if (boxAction.move === "right") {
-        currBlock = currBlock.map(coord => ({
-          x:
-            currBlock[3].x + 1 > cols - 1 ||
-            currBlock.some(coord =>
-              nextBoxStatic({ x: coord.x + 1, y: coord.y + 1 })
-            )
-              ? coord.x
-              : coord.x + 1,
-          y: coord.y,
-        }))
+      // Rotate if computed rotation have no static class
+      if (
+        !rotatedBlock.some(coord => isBoxStatic({ x: coord.x, y: coord.y }))
+      ) {
+        removePrevBlock(bCoords)
+        bCoords = rotatedBlock
       }
 
-      // TODO: Prevent rotate if surrounding blocks are static
-      if (boxAction.rotate) {
-        currBlock = currBlock.map(coord =>
-          rotateBox(90, coord, { x: currBlock[1].x, y: currBlock[1].y })
-        )
-        boxAction.rotate = false
-      }
-
-      currBlock = currBlock.map(coord => ({ x: coord.x, y: coord.y + 1 }))
-
-      boxAction.move = "idle"
+      renderBlock(grid, bCoords)
     }
+
+    // TODO: Speed up fall when down is pressed
 
     // If first row have static blocks, end game
     for (let i = 0; i < cols; i++) {
@@ -142,10 +184,11 @@ function game() {
         break
       }
     }
-    if (!gameEnd) renderBlock(grid, currBlock)
-  }, settings.speed)
+
+    blockAction.reset()
+  }, 200)
 }
-// controls(boxAction)
+// controls(blockAction)
 // game()
 
 // UI & game start

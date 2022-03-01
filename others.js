@@ -32,8 +32,6 @@ export const controls = boxAction => {
       case "ArrowRight":
         boxAction.move = "right"
         break
-      default:
-        boxAction.move = "idle"
     }
   })
 }
