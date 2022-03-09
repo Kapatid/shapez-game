@@ -80,34 +80,41 @@ const checkLines = bCoords => {
   const lowestRow = bCoords.reduce((prev, current) =>
     prev.y > current.y ? prev : current
   )
-  let clearLine = false
-  let numToFall = 0
+  let clearRow = false
+  let rowsRemoved = 0
 
+  // ROWS
   for (let i = lowestRow.y; i >= 0; i--) {
+    // COLUMNS
+    // If all boxes in a row is static, start clearing
     for (let j = 0; j < cols; j++) {
       if (isBoxStatic({ x: j, y: i })) {
-        clearLine = true
+        clearRow = true
       } else {
-        clearLine = false
+        clearRow = false
         break
       }
     }
 
-    if (clearLine) {
+    if (clearRow) {
+      // COLUMNS
+      // Start removing static classes of boxes
       for (let k = 0; k < cols; k++) {
         gridBoxes[toArrIndex({ x: k, y: i })].classList.remove("static")
       }
-      numToFall += 1
+      rowsRemoved += 1
     }
   }
 
-  if (numToFall !== 0) {
-    scoreDiv.textContent = `Score: ${100 * numToFall}`
+  if (rowsRemoved !== 0) {
+    scoreDiv.textContent = `Score: ${100 * rowsRemoved}`
 
+    // Starting from bottom, make all static boxes fall
     for (let i = gridBoxes.length - 1; i >= 0; i--) {
       if (gridBoxes[i].classList.contains("static")) {
         gridBoxes[i].classList.remove("static")
-        gridBoxes[cols * numToFall + i].classList.add("static")
+        // Fall based on number of lines removed
+        gridBoxes[cols * rowsRemoved + i].classList.add("static")
       }
     }
   }
@@ -149,6 +156,7 @@ function game() {
         gameEnd = true
         startBtn.style.display = "none"
         restartBtn.style.display = "grid"
+        modal.querySelectorAll("p").forEach(e => (e.style.display = "none"))
         modal.querySelector("h1").textContent = "GAME OVER 🙁"
         modal.style.display = "grid"
         break

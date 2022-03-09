@@ -48,3 +48,6 @@
 .modal > button {
   margin-top: 1rem;
 }
+.modal > p {
+  margin-top: 0.5rem;
+}
