@@ -1,7 +1,13 @@
-import { getGridData, countOccurrences, rotateBox } from "./others.js"
+import { getGridData, rotateBox } from "./others.js"
 import blocks from "./blocks.js"
 
 let settings = { fallSpeed: 1000, border: true }
+
+// UI
+const scoreDiv = document.getElementById("score")
+const modal = document.querySelector(".modal")
+const startBtn = modal.querySelectorAll(".modal-btn")[0]
+const restartBtn = modal.querySelectorAll(".modal-btn")[1]
 
 // Get grid and populate it with boxes
 const grid = document.querySelector("#grid")
@@ -16,6 +22,13 @@ const { cols, rows } = getGridData()
 let gameEnd = false
 
 /**
+ * From xy coords to array index. (row * width) + column
+ * @param {{ x: number, y: number }} coords
+ * @param {number} columns
+ */
+const toArrIndex = ({ x, y }) => y * cols + x
+
+/**
  * @param {HTMLElement} gridDiv
  * @param {{x: number, y: number}[]} bCoords
  */
@@ -28,10 +41,8 @@ const renderBlock = bCoords =>
  * Remove previously rendered block
  * @param {{ x: number; y: number;}[]} blockCoordinates
  */
-const removePrevBlock = blockCoordinates =>
-  blockCoordinates.map(coord =>
-    gridBoxes[toArrIndex(coord)].classList.remove("active")
-  )
+const removePrevBlock = bCoords =>
+  bCoords.map(coord => gridBoxes[toArrIndex(coord)].classList.remove("active"))
 
 /**
  * @param {{ x: number, y: number}} coord
@@ -40,14 +51,7 @@ const isBoxStatic = coord =>
   gridBoxes[toArrIndex(coord)].classList.contains("static")
 
 /**
- * From xy coords to array index. (row * width) + column
- * @param {{ x: number, y: number }} coords
- * @param {number} columns
- */
-const toArrIndex = ({ x, y }) => y * cols + x
-
-/**
- * @param {{ x: number, y: number }[]} blocks
+ * @param {[{ x: number, y: number }][]} blocks
  * @param {number} columns
  * @returns {{bCoords: { x: number, y: number }[], bName: string}}}
  * */
@@ -68,6 +72,47 @@ const randomBlock = blocks => {
   }
 }
 
+/**
+ * @param {{ x: number, y: number }[]} bCoords
+ */
+const checkLines = bCoords => {
+  // Get static box coords that have the lowest y
+  const lowestRow = bCoords.reduce((prev, current) =>
+    prev.y > current.y ? prev : current
+  )
+  let clearLine = false
+  let numToFall = 0
+
+  for (let i = lowestRow.y; i >= 0; i--) {
+    for (let j = 0; j < cols; j++) {
+      if (isBoxStatic({ x: j, y: i })) {
+        clearLine = true
+      } else {
+        clearLine = false
+        break
+      }
+    }
+
+    if (clearLine) {
+      for (let k = 0; k < cols; k++) {
+        gridBoxes[toArrIndex({ x: k, y: i })].classList.remove("static")
+      }
+      numToFall += 1
+    }
+  }
+
+  if (numToFall !== 0) {
+    scoreDiv.textContent = `Score: ${100 * numToFall}`
+
+    for (let i = gridBoxes.length - 1; i >= 0; i--) {
+      if (gridBoxes[i].classList.contains("static")) {
+        gridBoxes[i].classList.remove("static")
+        gridBoxes[cols * numToFall + i].classList.add("static")
+      }
+    }
+  }
+}
+
 function game() {
   // START
   let newBlock = randomBlock(blocks)
@@ -75,11 +120,11 @@ function game() {
 
   renderBlock(bCoords)
 
-  const fallBlock = () => {
+  const makeBlockFall = () => {
     if (
       // If last row is reached
       bCoords.some(coord => coord.y >= rows - 1) ||
-      // If falling block hit another block repalce class
+      // If falling block hit another block
       bCoords.some(coord => isBoxStatic({ x: coord.x, y: coord.y + 1 }))
     ) {
       // Make current block static
@@ -87,6 +132,7 @@ function game() {
         gridBoxes[toArrIndex(coord)].classList.remove("active")
         gridBoxes[toArrIndex(coord)].classList.add("static")
       })
+      checkLines(bCoords)
       // Create new falling block
       newBlock = randomBlock(blocks)
       bCoords = newBlock.bCoords
@@ -101,7 +147,10 @@ function game() {
     for (let i = 0; i < cols; i++) {
       if (gridBoxes[i].classList.contains("static")) {
         gameEnd = true
-        console.log("GAME END!")
+        startBtn.style.display = "none"
+        restartBtn.style.display = "grid"
+        modal.querySelector("h1").textContent = "GAME OVER 🙁"
+        modal.style.display = "grid"
         break
       }
     }
@@ -112,12 +161,14 @@ function game() {
   // UPDATE fall
   setInterval(() => {
     if (gameEnd) return
-    fallBlock()
+    makeBlockFall()
   }, settings.fallSpeed)
 
   // CONTROLS listener
   window.addEventListener("keydown", ({ code }) => {
-    if (code === "KeyT" && bName !== "O") {
+    if (gameEnd) return
+
+    if (code === "KeyR" && bName !== "O") {
       const rotatedBlock = bCoords.map(coord =>
         rotateBox(90, coord, { x: bCoords[1].x, y: bCoords[1].y })
       )
@@ -136,7 +187,7 @@ function game() {
     }
 
     if (code === "KeyS" || code === "ArrowDown") {
-      fallBlock()
+      makeBlockFall()
     }
 
     if (code === "KeyA" || code === "ArrowLeft") {
@@ -168,21 +219,19 @@ function game() {
     }
   })
 }
-// game()
 
 // UI & game start
-// document.querySelectorAll(".modal-btn").forEach(btn => {
-//   startBtn.style.display = "grid"
-//   restartBtn.style.display = "none"
-//   btn.addEventListener("click", e => {
-//     const btn = e.currentTarget
+document.querySelectorAll(".modal-btn").forEach(btn => {
+  startBtn.style.display = "grid"
+  restartBtn.style.display = "none"
+  btn.addEventListener("click", e => {
+    const btn = e.currentTarget
 
-//     if (btn.value === "start") {
-//       modal.style.display = "none"
-//       // controls(snek)
-//       game()
-//     } else if (btn.value === "restart") {
-//       window.location.reload()
-//     }
-//   })
-// })
+    if (btn.value === "start") {
+      modal.style.display = "none"
+      game()
+    } else if (btn.value === "restart") {
+      window.location.reload()
+    }
+  })
+})

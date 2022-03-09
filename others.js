@@ -11,10 +11,6 @@ const getGridData = () => {
   }
 }
 
-// NOT FINAL
-const countOccurrences = (arr, x) =>
-  arr.reduce((total, box) => (box.x === x ? total + 1 : total), 0)
-
 /**
  * Source: https://stackoverflow.com/a/7102110
  * @param {number} degree
@@ -34,4 +30,4 @@ const rotateBox = (degree, { x, y }, origin) => {
   }
 }
 
-export { getGridData, countOccurrences, rotateBox }
+export { getGridData, rotateBox }
