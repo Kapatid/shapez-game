@@ -62,8 +62,7 @@ const randomBlock = blocks => {
   return {
     bCoords: coords[randomNum].map(coord => ({
       x:
-        // Move block to center
-        name === "O"
+        name === "O" // Move block to center
           ? coord.x + Math.floor(cols / 2 - 1)
           : coord.x + Math.floor(cols / 2 - 2),
       y: coord.y,
@@ -108,9 +107,8 @@ const checkLines = bCoords => {
 
   if (rowsRemoved !== 0) {
     scoreDiv.textContent = `Score: ${100 * rowsRemoved}`
-
     // Starting from bottom, make all static boxes fall
-    for (let i = gridBoxes.length - 1; i >= 0; i--) {
+    for (let i = toArrIndex(lowestRow); i >= 0; i--) {
       if (gridBoxes[i].classList.contains("static")) {
         gridBoxes[i].classList.remove("static")
         // Fall based on number of lines removed
