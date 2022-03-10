@@ -24,14 +24,10 @@ let gameEnd = false
 /**
  * From xy coords to array index. (row * width) + column
  * @param {{ x: number, y: number }} coords
- * @param {number} columns
  */
 const toArrIndex = ({ x, y }) => y * cols + x
 
-/**
- * @param {HTMLElement} gridDiv
- * @param {{x: number, y: number}[]} bCoords
- */
+/** @param {{x: number, y: number}[]} bCoords */
 const renderBlock = bCoords =>
   bCoords.forEach(coord => {
     grid.children[toArrIndex(coord)].classList.add("active")
@@ -44,15 +40,12 @@ const renderBlock = bCoords =>
 const removePrevBlock = bCoords =>
   bCoords.map(coord => gridBoxes[toArrIndex(coord)].classList.remove("active"))
 
-/**
- * @param {{ x: number, y: number}} coord
- */
+/** @param {{ x: number, y: number}} coord */
 const isBoxStatic = coord =>
   gridBoxes[toArrIndex(coord)].classList.contains("static")
 
 /**
  * @param {[{ x: number, y: number }][]} blocks
- * @param {number} columns
  * @returns {{bCoords: { x: number, y: number }[], bName: string}}}
  * */
 const randomBlock = blocks => {
@@ -72,10 +65,11 @@ const randomBlock = blocks => {
 }
 
 /**
+ * Check if there are any completed lines
  * @param {{ x: number, y: number }[]} bCoords
  */
 const checkLines = bCoords => {
-  // Get static box coords that have the lowest y
+  // Get lowest y of current box that hit a static box/last row
   const lowestRow = bCoords.reduce((prev, current) =>
     prev.y > current.y ? prev : current
   )
