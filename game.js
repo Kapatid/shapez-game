@@ -1,16 +1,24 @@
+// @ts-check
 import { getGridData, rotateBox } from "./others.js"
 import blocks from "./blocks.js"
+import "./typedefs.js"
 
 let settings = { fallSpeed: 1000, border: true }
 
 // UI
 const scoreDiv = document.getElementById("score")
-const modal = document.querySelector(".modal")
-const startBtn = modal.querySelectorAll(".modal-btn")[0]
-const restartBtn = modal.querySelectorAll(".modal-btn")[1]
+const modal = document.getElementById("modal")
+// Apparently getElementById returns HTMLElement but
+// getElementsByClassName only returns Element
+const startBtn = /** @type {HTMLButtonElement} */ (modal.querySelectorAll(
+  ".modal-btn"
+)[0])
+const restartBtn = /** @type {HTMLButtonElement} */ (modal.querySelectorAll(
+  ".modal-btn"
+)[1])
 
 // Get grid and populate it with boxes
-const grid = document.querySelector("#grid")
+const grid = document.getElementById("grid")
 const gridBoxes = grid.children
 const box = document.createElement("div")
 box.classList.add("box")
@@ -23,30 +31,30 @@ let gameEnd = false
 
 /**
  * From xy coords to array index. (row * width) + column
- * @param {{ x: number, y: number }} coords
+ * @param {Coordinates} coords
  */
 const toArrIndex = ({ x, y }) => y * cols + x
 
-/** @param {{x: number, y: number}[]} bCoords */
-const renderBlock = bCoords =>
-  bCoords.forEach(coord => {
+/** @param {Block} block */
+const renderBlock = block =>
+  block.forEach(coord => {
     grid.children[toArrIndex(coord)].classList.add("active")
   })
 
 /**
  * Remove previously rendered block
- * @param {{ x: number; y: number;}[]} blockCoordinates
+ * @param {Block} block
  */
-const removePrevBlock = bCoords =>
-  bCoords.map(coord => gridBoxes[toArrIndex(coord)].classList.remove("active"))
+const removePrevBlock = block =>
+  block.map(coord => gridBoxes[toArrIndex(coord)].classList.remove("active"))
 
-/** @param {{ x: number, y: number}} coord */
+/** @param {Coordinates} coord */
 const isBoxStatic = coord =>
   gridBoxes[toArrIndex(coord)].classList.contains("static")
 
 /**
- * @param {[{ x: number, y: number }][]} blocks
- * @returns {{bCoords: { x: number, y: number }[], bName: string}}}
+ * @param { blocks } blocks
+ * @returns {{bCoords: Block, bName: string}}
  * */
 const randomBlock = blocks => {
   const coords = Object.values(blocks)
@@ -66,11 +74,11 @@ const randomBlock = blocks => {
 
 /**
  * Check if there are any completed lines
- * @param {{ x: number, y: number }[]} bCoords
+ * @param {Block} block
  */
-const checkLines = bCoords => {
+const checkLines = block => {
   // Get lowest y of current box that hit a static box/last row
-  const lowestRow = bCoords.reduce((prev, current) =>
+  const lowestRow = block.reduce((prev, current) =>
     prev.y > current.y ? prev : current
   )
   let clearRow = false
@@ -225,12 +233,12 @@ document.querySelectorAll(".modal-btn").forEach(btn => {
   startBtn.style.display = "grid"
   restartBtn.style.display = "none"
   btn.addEventListener("click", e => {
-    const btn = e.currentTarget
+    const currBtn = /** @type {HTMLButtonElement} */ (e.target)
 
-    if (btn.value === "start") {
+    if (currBtn.value === "start") {
       modal.style.display = "none"
       game()
-    } else if (btn.value === "restart") {
+    } else if (currBtn.value === "restart") {
       window.location.reload()
     }
   })

@@ -6,7 +6,7 @@
 
 #grid,
 .box,
-.modal {
+#modal {
   display: grid;
   place-items: center;
 }
@@ -37,7 +37,7 @@
   background-color: brown;
 }
 
-.modal {
+#modal {
   position: absolute;
   background-color: white;
   padding: 2.5rem;
@@ -45,9 +45,9 @@
   filter: drop-shadow(0 20px 13px rgb(0 0 0 / 0.08))
     drop-shadow(0 8px 5px rgb(0 0 0 / 0.13));
 }
-.modal > button {
+#modal > button {
   margin-top: 1rem;
 }
-.modal > p {
+#modal > p {
   margin-top: 0.5rem;
 }
