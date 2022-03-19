@@ -1,7 +1,5 @@
 /**
- * @typedef {Object} Coordinates
- * @property {number} x
- * @property {number} y
+ * @typedef { {x: number; y: number} } Coordinates
  *
- * @typedef {Array<Coordinates>} Block - contains array of {@link Coordinates}
+ * @typedef {Array<Coordinates>} Block
  */

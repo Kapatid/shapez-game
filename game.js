@@ -77,7 +77,7 @@ const randomBlock = blocks => {
  * @param {Block} block
  */
 const checkLines = block => {
-  // Get lowest y of current box that hit a static box/last row
+  // Get lowest y of current block that hit a static box/last row
   const lowestRow = block.reduce((prev, current) =>
     prev.y > current.y ? prev : current
   )
@@ -108,7 +108,8 @@ const checkLines = block => {
   }
 
   if (rowsRemoved !== 0) {
-    scoreDiv.textContent = `Score: ${100 * rowsRemoved}`
+    const score = parseInt(scoreDiv.textContent.replace("Score: ", ""))
+    scoreDiv.textContent = `Score: ${score + 100 * rowsRemoved}`
     // Starting from bottom, make all static boxes fall
     for (let i = toArrIndex(lowestRow); i >= 0; i--) {
       if (gridBoxes[i].classList.contains("static")) {

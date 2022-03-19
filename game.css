@@ -32,11 +32,6 @@
   background-color: black;
 }
 
-.food {
-  border-color: brown;
-  background-color: brown;
-}
-
 #modal {
   position: absolute;
   background-color: white;
