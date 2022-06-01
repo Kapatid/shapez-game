@@ -1,6 +1,6 @@
 // @ts-check
 import { getGridData, rotateBox } from "./others.js"
-import blocks from "./blocks.js"
+import tetrominoes from "./tetrominoes.js"
 import "./typedefs.js"
 
 let settings = { fallSpeed: 1000, border: true }
@@ -35,50 +35,52 @@ let gameEnd = false
  */
 const toArrIndex = ({ x, y }) => y * cols + x
 
-/** @param {Block} block */
-const renderBlock = block =>
-  block.forEach(coord => {
+/** @param {Tetromino} tetromino */
+const renderBlock = tetromino =>
+  tetromino.forEach(coord => {
     grid.children[toArrIndex(coord)].classList.add("active")
   })
 
 /**
  * Remove previously rendered block
- * @param {Block} block
+ * @param {Tetromino} tetromino
  */
-const removePrevBlock = block =>
-  block.map(coord => gridBoxes[toArrIndex(coord)].classList.remove("active"))
+const removePrevBlock = tetromino =>
+  tetromino.map(coord =>
+    gridBoxes[toArrIndex(coord)].classList.remove("active")
+  )
 
 /** @param {Coordinates} coord */
 const isBoxStatic = coord =>
   gridBoxes[toArrIndex(coord)].classList.contains("static")
 
 /**
- * @param { blocks } blocks
- * @returns {{bCoords: Block, bName: string}}
+ * @param { tetrominoes } tetrominoes
+ * @returns {{tetromino: Tetromino, name: string}}
  * */
-const randomBlock = blocks => {
-  const coords = Object.values(blocks)
+const randomBlock = tetrominoes => {
+  const coords = Object.values(tetrominoes)
   const randomNum = Math.floor(Math.random() * coords.length)
-  const name = Object.keys(blocks)[randomNum]
+  const name = Object.keys(tetrominoes)[randomNum]
   return {
-    bCoords: coords[randomNum].map(coord => ({
+    tetromino: coords[randomNum].map(coord => ({
       x:
         name === "O" // Move block to center
           ? coord.x + Math.floor(cols / 2 - 1)
           : coord.x + Math.floor(cols / 2 - 2),
       y: coord.y,
     })),
-    bName: name,
+    name: name,
   }
 }
 
 /**
  * Check if there are any completed lines
- * @param {Block} block
+ * @param { Tetromino } tetromino
  */
-const checkLines = block => {
+const checkLines = tetromino => {
   // Get lowest y of current block that hit a static box/last row
-  const lowestRow = block.reduce((prev, current) =>
+  const lowestRow = tetromino.reduce((prev, current) =>
     prev.y > current.y ? prev : current
   )
   let clearRow = false
@@ -123,32 +125,32 @@ const checkLines = block => {
 
 function game() {
   // START
-  let newBlock = randomBlock(blocks)
-  let { bCoords, bName } = newBlock
+  let newBlock = randomBlock(tetrominoes)
+  let { tetromino, name } = newBlock
 
-  renderBlock(bCoords)
+  renderBlock(tetromino)
 
   const makeBlockFall = () => {
     if (
       // If last row is reached
-      bCoords.some(coord => coord.y >= rows - 1) ||
+      tetromino.some(coord => coord.y >= rows - 1) ||
       // If falling block hit another block
-      bCoords.some(coord => isBoxStatic({ x: coord.x, y: coord.y + 1 }))
+      tetromino.some(coord => isBoxStatic({ x: coord.x, y: coord.y + 1 }))
     ) {
       // Make current block static
-      bCoords.forEach(coord => {
+      tetromino.forEach(coord => {
         gridBoxes[toArrIndex(coord)].classList.remove("active")
         gridBoxes[toArrIndex(coord)].classList.add("static")
       })
-      checkLines(bCoords)
+      checkLines(tetromino)
       // Create new falling block
-      newBlock = randomBlock(blocks)
-      bCoords = newBlock.bCoords
-      bName = newBlock.bName
+      newBlock = randomBlock(tetrominoes)
+      tetromino = newBlock.tetromino
+      name = newBlock.name
     } else {
-      removePrevBlock(bCoords)
+      removePrevBlock(tetromino)
       // Make block "fall"
-      bCoords = bCoords.map(coord => ({ x: coord.x, y: coord.y + 1 }))
+      tetromino = tetromino.map(coord => ({ x: coord.x, y: coord.y + 1 }))
     }
 
     // If first row have static blocks, end game
@@ -164,7 +166,7 @@ function game() {
       }
     }
 
-    renderBlock(bCoords)
+    renderBlock(tetromino)
   }
 
   // UPDATE fall
@@ -177,9 +179,9 @@ function game() {
   window.addEventListener("keydown", ({ code }) => {
     if (gameEnd) return
 
-    if (code === "KeyR" && bName !== "O") {
-      const rotatedBlock = bCoords.map(coord =>
-        rotateBox(90, coord, { x: bCoords[1].x, y: bCoords[1].y })
+    if (code === "KeyR" && name !== "O") {
+      const rotatedBlock = tetromino.map(coord =>
+        rotateBox(90, coord, { x: tetromino[1].x, y: tetromino[1].y })
       )
 
       // Rotate only if computed rotation have NO static class &
@@ -189,9 +191,9 @@ function game() {
         !rotatedBlock.some(coord => coord.x < 0) &&
         !rotatedBlock.some(coord => coord.x > cols - 1)
       ) {
-        removePrevBlock(bCoords)
-        bCoords = rotatedBlock
-        renderBlock(bCoords)
+        removePrevBlock(tetromino)
+        tetromino = rotatedBlock
+        renderBlock(tetromino)
       }
     }
 
@@ -200,31 +202,35 @@ function game() {
     }
 
     if (code === "KeyA" || code === "ArrowLeft") {
-      removePrevBlock(bCoords)
-      bCoords = bCoords.map(coord => ({
+      removePrevBlock(tetromino)
+      tetromino = tetromino.map(coord => ({
         x:
           // Stop moving if a box have x=0
-          bCoords.some(coord => coord.x === 0) ||
+          tetromino.some(coord => coord.x === 0) ||
           // Stop moving if there is a static box
-          bCoords.some(coord => isBoxStatic({ x: coord.x - 1, y: coord.y + 1 }))
+          tetromino.some(coord =>
+            isBoxStatic({ x: coord.x - 1, y: coord.y + 1 })
+          )
             ? coord.x
             : coord.x - 1,
         y: coord.y,
       }))
-      renderBlock(bCoords)
+      renderBlock(tetromino)
     }
 
     if (code === "KeyD" || code === "ArrowRight") {
-      removePrevBlock(bCoords)
-      bCoords = bCoords.map(coord => ({
+      removePrevBlock(tetromino)
+      tetromino = tetromino.map(coord => ({
         x:
-          bCoords.some(coord => coord.x === cols - 1) ||
-          bCoords.some(coord => isBoxStatic({ x: coord.x + 1, y: coord.y + 1 }))
+          tetromino.some(coord => coord.x === cols - 1) ||
+          tetromino.some(coord =>
+            isBoxStatic({ x: coord.x + 1, y: coord.y + 1 })
+          )
             ? coord.x
             : coord.x + 1,
         y: coord.y,
       }))
-      renderBlock(bCoords)
+      renderBlock(tetromino)
     }
   })
 }
