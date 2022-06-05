@@ -1,3 +1,3 @@
 # shapez-game
 
-Simple tetris clone game
+Simple tetris clone game.
